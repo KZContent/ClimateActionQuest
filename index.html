@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no">
+
+<title>Climate Action Quest</title>
+
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+<style>
+
+html, body {
+
+margin: 0;
+padding: 0;
+width: 100%;
+height: 100%;
+overflow: hidden;
+font-family: Arial, sans-serif;
+background: transparent;
+
+}
+
+video, canvas {
+
+position: fixed !important;
+top: 0 !important;
+left: 0 !important;
+width: 100vw !important;
+height: 100vh !important;
+object-fit: cover !important;
+
+}
+
+#questionBox {
+
+position: fixed;
+bottom: 20px;
+left: 50%;
+transform: translateX(-50%);
+width: 92%;
+max-width: 700px;
+background: rgba(255,255,255,0.96);
+padding: 20px;
+border-radius: 20px;
+text-align: center;
+display: none;
+z-index: 9999;
+box-shadow: 0 0 20px rgba(0,0,0,0.4);
+
+}
+
+h1 {
+
+color: green;
+margin-top: 0;
+font-size: 32px;
+
+}
+
+#questionText {
+
+font-size: 24px;
+line-height: 1.5;
+margin-bottom: 20px;
+
+}
+
+#arabicText {
+
+font-size: 28px;
+line-height: 1.8;
+direction: rtl;
+margin-bottom: 25px;
+
+}
+
+button {
+
+padding: 14px 24px;
+margin: 10px;
+border: none;
+border-radius: 14px;
+font-size: 20px;
+cursor: pointer;
+background-color: green;
+color: white;
+min-width: 180px;
+
+}
+
+.correct {
+
+background-color: #28a745 !important;
+
+}
+
+.wrong {
+
+background-color: #dc3545 !important;
+
+}
+
+#feedback {
+
+font-size: 28px;
+font-weight: bold;
+margin-top: 20px;
+display: none;
+
+}
+
+#scoreText {
+
+font-size: 22px;
+margin-top: 10px;
+display: none;
+
+}
+
+#resultBox {
+
+display: none;
+margin-top: 20px;
+
+}
+
+#hintText {
+
+font-size: 22px;
+margin-top: 20px;
+color: green;
+font-weight: bold;
+line-height: 1.5;
+
+}
+
+img {
+
+width: 95%;
+max-width: 500px;
+border-radius: 15px;
+
+}
+
+#hiddenTrigger {
+
+position: fixed;
+top: 0;
+left: 0;
+width: 80px;
+height: 80px;
+z-index: 30000;
+
+}
+
+#resetPanel {
+
+position: fixed;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+background: white;
+padding: 20px;
+border-radius: 20px;
+display: none;
+z-index: 40000;
+text-align: center;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="hiddenTrigger"></div>
+
+<div id="resetPanel">
+
+<h2>Supervisor Controls</h2>
+
+<button onclick="resetGame()">
+Reset Game
+</button>
+
+<br><br>
+
+<button onclick="closeResetPanel()">
+Close
+</button>
+
+</div>
+
+<div id="questionBox">
+
+<h1>🌍 Climate Action Quest</h1>
+
+<div id="questionText"></div>
+
+<div id="arabicText"></div>
+
+<button id="option1"></button>
+
+<button id="option2"></button>
+
+<div id="feedback"></div>
+
+<div id="scoreText"></div>
+
+<div id="resultBox">
+
+<img id="resultGif">
+
+<div id="hintText"></div>
+
+</div>
+
+</div>
+
+<a-scene
+mindar-image="imageTargetSrc: targets/targets.mind; uiScanning: no; uiLoading: no; uiError: no;"
+color-space="sRGB"
+renderer="alpha: true; antialias: true;"
+vr-mode-ui="enabled: false"
+device-orientation-permission-ui="enabled: false"
+embedded
+
+>
+
+<a-camera
+position="0 0 0"
+look-controls="enabled: false"> </a-camera>
+
+<a-entity
+mindar-image-target="targetIndex: 0"
+id="target0"> </a-entity>
+
+<a-entity
+mindar-image-target="targetIndex: 1"
+id="target1"> </a-entity>
+
+<a-entity
+mindar-image-target="targetIndex: 2"
+id="target2"> </a-entity>
+
+<a-entity
+mindar-image-target="targetIndex: 3"
+id="target3"> </a-entity>
+
+<a-entity
+mindar-image-target="targetIndex: 4"
+id="target4"> </a-entity>
+
+<a-entity
+mindar-image-target="targetIndex: 5"
+id="target5"> </a-entity>
+
+</a-scene>
+
+<script>
+
+const clues = [
+
+{
+
+id: "epa",
+
+question:
+"I’m made from things you used before,<br>I help the Earth by wasting less.<br>I am ________",
+
+arabic:
+"أنا مصنوع من أشياء خدمت من قبل،<br>أساعد الأرض بتقليل المهملات.<br>أنا ________",
+
+options: ["Recycling ♻️", "Pollution 🏭"],
+
+correct: 0,
+
+gif: "assets/gifs/eyecare.gif",
+
+hint:
+"Next, look for a place that helps you see the beauty of nature clearly.<br><br>ابحث الآن عن مكان يساعدك ترى جمال الطبيعة بوضوح."
+
+},
+
+{
+
+id: "learn",
+
+question:
+"A place of learning, where minds grow,<br>Where ideas start and knowledge flows.<br>I am ________",
+
+arabic:
+"مكان نتعلم فيه،<br>ونكبر بأفكارنا ومعرفتنا.<br>أنا ________",
+
+options: ["University 🎓", "Factory 🏭"],
+
+correct: 0,
+
+gif: "assets/gifs/finalepa.gif",
+
+hint:
+"Final mission: return to the place where yesterday’s trash becomes tomorrow’s treasure."
+
+},
+
+{
+
+id: "optics",
+
+question:
+"I help you see leaves, trees, and light,<br>I make your world clear and bright.<br>I am ________",
+
+arabic:
+"أساعدك تشوف الأشجار والضوء،<br>أخلي الدنيا أوضح وأجمل.<br>أنا ________",
+
+options: ["Glasses 👓", "Shoes 👟"],
+
+correct: 0,
+
+gif: "assets/gifs/dental.gif",
+
+hint:
+"Now find the place that protects your strong smile."
+
+},
+
+{
+
+id: "market",
+
+question:
+"I move up and down each day,<br>Like busy bees that never stay.<br>I am ________",
+
+arabic:
+"أطلع وأنزل كل يوم،<br>مثل النحل دائماً يتحرك.<br>أنا ________",
+
+options: ["Market 📈", "Desert 🏜️"],
+
+correct: 0,
+
+gif: "assets/gifs/learn.gif",
+
+hint:
+"Now find a place where questions live and learning grows."
+
+},
+
+{
+
+id: "dental",
+
+question:
+"I help you chew and take each bite,<br>Keep me clean, keep me right.<br>I am ________",
+
+arabic:
+"أساعدك تمضغ الأكل،<br>حافظ على نظافتي، حافظ على صحتي.<br>أنا ________",
+
+options: ["Teeth 🦷", "Cloud ☁️"],
+
+correct: 0,
+
+gif: "assets/gifs/market.gif",
+
+hint:
+"Next stop is where smart choices grow."
+
+},
+
+{
+
+id: "final",
+
+question:
+"I help the planet every day,<br>Reduce, reuse is my way.<br>I am ________",
+
+arabic:
+"أساعد الكوكب كل يوم،<br>أقلل وأعيد الاستخدام.<br>أنا ________",
+
+options: ["Recycling Plant ♻️", "Volcano 🌋"],
+
+correct: 0,
+
+gif: "assets/gifs/complete.gif",
+
+hint:
+"🎉 Mission Complete! Climate Guardian Achieved! 🎉"
+
+}
+
+];
+
+let currentClue = null;
+
+let answered = false;
+
+let score = parseInt(localStorage.getItem("climateScore")) || 0;
+
+function showClue(index){
+
+currentClue = clues[index];
+
+answered = false;
+
+document.getElementById("questionBox").style.display = "block";
+
+document.getElementById("questionText").innerHTML =
+currentClue.question;
+
+document.getElementById("arabicText").innerHTML =
+currentClue.arabic;
+
+document.getElementById("option1").innerHTML =
+currentClue.options[0];
+
+document.getElementById("option2").innerHTML =
+currentClue.options[1];
+
+document.getElementById("feedback").style.display = "none";
+
+document.getElementById("scoreText").style.display = "none";
+
+document.getElementById("resultBox").style.display = "none";
+
+document.getElementById("option1").className = "";
+
+document.getElementById("option2").className = "";
+
+document.getElementById("option1").onclick = () => checkAnswer(0);
+
+document.getElementById("option2").onclick = () => checkAnswer(1);
+
+}
+
+function checkAnswer(selected){
+
+if(answered) return;
+
+answered = true;
+
+const feedback = document.getElementById("feedback");
+
+const scoreText = document.getElementById("scoreText");
+
+const option1 = document.getElementById("option1");
+
+const option2 = document.getElementById("option2");
+
+if(currentClue.correct === 0){
+
+option1.classList.add("correct");
+
+} else {
+
+option2.classList.add("correct");
+
+}
+
+if(selected !== currentClue.correct){
+
+if(selected === 0){
+
+option1.classList.add("wrong");
+
+} else {
+
+option2.classList.add("wrong");
+
+}
+
+feedback.innerHTML =
+"❌ Wrong! / إجابة خاطئة";
+
+feedback.style.color = "red";
+
+}
+
+else {
+
+feedback.innerHTML =
+"✅ Correct! / إجابة صحيحة";
+
+feedback.style.color = "green";
+
+const completedKey =
+"completed_" + currentClue.id;
+
+if(localStorage.getItem(completedKey) !== "true"){
+
+score += 10;
+
+localStorage.setItem("climateScore", score);
+
+localStorage.setItem(completedKey, "true");
+
+}
+
+}
+
+feedback.style.display = "block";
+
+scoreText.innerHTML =
+"🌟 Score: " + score;
+
+scoreText.style.display = "block";
+
+document.getElementById("resultGif").src =
+currentClue.gif;
+
+document.getElementById("hintText").innerHTML =
+currentClue.hint;
+
+setTimeout(() => {
+
+document.getElementById("resultBox").style.display = "block";
+
+setTimeout(() => {
+
+document.getElementById("resultBox").style.display = "none";
+
+document.getElementById("questionBox").style.display = "none";
+
+}, 15000);
+
+}, 1500);
+
+if(currentClue.id === "final"){
+
+setTimeout(() => {
+
+localStorage.clear();
+
+alert("🌍 Quest Complete! Scores Reset For New Players.");
+
+location.reload();
+
+}, 17000);
+
+}
+
+}
+
+document.getElementById("target0")
+.addEventListener("targetFound", () => showClue(0));
+
+document.getElementById("target1")
+.addEventListener("targetFound", () => showClue(1));
+
+document.getElementById("target2")
+.addEventListener("targetFound", () => showClue(2));
+
+document.getElementById("target3")
+.addEventListener("targetFound", () => showClue(3));
+
+document.getElementById("target4")
+.addEventListener("targetFound", () => showClue(4));
+
+document.getElementById("target5")
+.addEventListener("targetFound", () => showClue(5));
+
+let wakeLock = null;
+
+async function keepScreenAwake() {
+
+if ("wakeLock" in navigator) {
+
+try {
+
+wakeLock = await navigator.wakeLock.request("screen");
+
+console.log("Wake Lock Active");
+
+} catch (err) {
+
+console.log("Wake Lock Failed");
+
+}
+
+} else {
+
+console.log("Wake Lock Not Supported");
+
+}
+
+}
+
+window.addEventListener("click", () => {
+
+keepScreenAwake();
+
+}, { once: true });
+
+let tapCount = 0;
+
+let tapTimer;
+
+document.getElementById("hiddenTrigger")
+.addEventListener("click", () => {
+
+tapCount++;
+
+clearTimeout(tapTimer);
+
+tapTimer = setTimeout(() => {
+
+tapCount = 0;
+
+}, 2000);
+
+if(tapCount >= 5){
+
+document.getElementById("resetPanel").style.display = "block";
+
+tapCount = 0;
+
+}
+
+});
+
+function resetGame(){
+
+localStorage.clear();
+
+alert("Game Reset Complete");
+
+location.reload();
+
+}
+
+function closeResetPanel(){
+
+document.getElementById("resetPanel").style.display = "none";
+
+}
+
+</script>
+
+</body>
+
+</html>
